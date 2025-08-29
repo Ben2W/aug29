@@ -13,6 +13,25 @@ export const appRouter = t.router({
     });
     return rows;
   }),
+  listJobPostsByDepartment: t.procedure
+    .input(
+      z.object({
+        department: z.enum([
+          "engineering",
+          "design",
+          "data",
+          "people",
+          "growth",
+        ]),
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      const rows = await ctx.db.query.jobPosts.findMany({
+        where: eq(jobPosts.department, input.department),
+        orderBy: desc(jobPosts.createdAt),
+      });
+      return rows;
+    }),
   getJobPost: t.procedure
     .input(z.object({ id: z.number().int().positive() }))
     .query(async ({ ctx, input }) => {

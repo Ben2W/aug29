@@ -6,6 +6,15 @@ import { trpc } from "@/lib/trpc/client";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
+import { Label } from "@/components/ui/label";
+import {
+  DepartmentIcon,
+  departmentIconMap,
+  type DepartmentKey,
+} from "@/components/department-icon";
+import { toast } from "sonner";
 
 export function JobPost({
   post,
@@ -31,6 +40,8 @@ export function JobPost({
       email,
       linkedinUrl,
     });
+
+    toast.success("Application submitted successfully");
   };
 
   const details = useMemo(
@@ -45,76 +56,115 @@ export function JobPost({
 
   return (
     <div className="space-y-6">
-      <div className="rounded-lg border p-4">
-        <div className="text-2xl font-semibold">{post.name}</div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
-          {details.map((d) => (
-            <div key={d.label} className="text-sm">
-              <div className="text-muted-foreground">{d.label}</div>
-              <div>{d.value}</div>
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <aside className="lg:col-span-4">
+          <div className="sticky top-4 rounded-lg p-4">
+            <div className="text-xl font-semibold">Role details</div>
+            <div className="mt-4 space-y-4">
+              {details.map((d, idx) => (
+                <div key={d.label}>
+                  <div className="text-xs uppercase tracking-wide text-muted-foreground">
+                    {d.label}
+                  </div>
+                  {d.label === "Department" ? (
+                    <div className="mt-1 flex items-center gap-2 text-sm">
+                      {post.department in departmentIconMap ? (
+                        <DepartmentIcon
+                          value={post.department as DepartmentKey}
+                          className="h-4 w-4 text-muted-foreground"
+                        />
+                      ) : null}
+                      <span>{post.department}</span>
+                    </div>
+                  ) : (
+                    <div className="mt-1 text-sm">{d.value}</div>
+                  )}
+                  {idx !== details.length - 1 ? (
+                    <Separator className="my-4" />
+                  ) : null}
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
-        <div className="mt-6">
-          <div className="text-sm text-muted-foreground">Overview</div>
-          <div className="mt-2 whitespace-pre-wrap leading-7">
-            {post.overview}
           </div>
-        </div>
-      </div>
+        </aside>
 
-      <Tabs defaultValue="overview">
-        <TabsList>
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="application">Application</TabsTrigger>
-        </TabsList>
-        <TabsContent value="overview">
-          <div className="rounded-lg border p-4">
-            <div className="text-sm text-muted-foreground">Overview</div>
-            <div className="mt-2 whitespace-pre-wrap leading-7">
-              {post.overview}
-            </div>
-          </div>
-        </TabsContent>
-        <TabsContent value="application">
-          <div className="rounded-lg border p-4">
-            <div className="text-sm text-muted-foreground">Application</div>
-            <form
-              className="mt-3 space-y-3"
-              action={async (fd) => {
-                await handleSubmit(fd);
-              }}
-            >
-              <Input
-                name="name"
-                placeholder="Full name"
-                disabled={disableApplicationUpload || isSubmitting}
-                required
-              />
-              <Input
-                name="email"
-                type="email"
-                placeholder="Email"
-                disabled={disableApplicationUpload || isSubmitting}
-                required
-              />
-              <Input
-                name="linkedinUrl"
-                type="url"
-                placeholder="LinkedIn URL"
-                disabled={disableApplicationUpload || isSubmitting}
-                required
-              />
-              <Button
-                type="submit"
-                disabled={disableApplicationUpload || isSubmitting}
-              >
-                {isSubmitting ? "Submitting..." : "Submit application"}
-              </Button>
-            </form>
-          </div>
-        </TabsContent>
-      </Tabs>
+        <main className="lg:col-span-8 space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-2xl font-semibold">
+                {post.name}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Tabs defaultValue="overview" className="w-full">
+                <TabsList>
+                  <TabsTrigger value="overview">Overview</TabsTrigger>
+                  <TabsTrigger value="application">Application</TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="overview" className="mt-4">
+                  <div className="text-sm text-muted-foreground">Overview</div>
+                  <div className="mt-2 whitespace-pre-wrap leading-7">
+                    {post.overview}
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="application" className="mt-4">
+                  <div className="text-sm text-muted-foreground">
+                    Application
+                  </div>
+                  <form
+                    className="mt-3 space-y-4"
+                    action={async (fd) => {
+                      await handleSubmit(fd);
+                    }}
+                  >
+                    <div className="space-y-2">
+                      <Label htmlFor="name">Full name</Label>
+                      <Input
+                        id="name"
+                        name="name"
+                        placeholder="Jane Doe"
+                        disabled={disableApplicationUpload || isSubmitting}
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="email">Email</Label>
+                      <Input
+                        id="email"
+                        name="email"
+                        type="email"
+                        placeholder="jane@example.com"
+                        disabled={disableApplicationUpload || isSubmitting}
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="linkedin">LinkedIn URL</Label>
+                      <Input
+                        id="linkedin"
+                        name="linkedinUrl"
+                        type="url"
+                        placeholder="https://linkedin.com/in/janedoe"
+                        disabled={disableApplicationUpload || isSubmitting}
+                        required
+                      />
+                    </div>
+                    <Button
+                      type="submit"
+                      disabled={disableApplicationUpload || isSubmitting}
+                      aria-disabled={disableApplicationUpload || isSubmitting}
+                    >
+                      {isSubmitting ? "Submitting..." : "Submit application"}
+                    </Button>
+                  </form>
+                </TabsContent>
+              </Tabs>
+            </CardContent>
+          </Card>
+        </main>
+      </div>
     </div>
   );
 }

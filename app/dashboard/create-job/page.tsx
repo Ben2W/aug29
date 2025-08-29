@@ -210,7 +210,12 @@ function CreateJobPreview({
         </div>
       </div>
       <JobPost
-        post={{ id: 0, createdAt: "", ...previewData }}
+        post={{
+          id: 0,
+          createdAt: "",
+          organizationImageUrl: previewData.organizationImageUrl ?? null,
+          ...previewData,
+        }}
         disableApplicationUpload
       />
     </div>
@@ -242,6 +247,8 @@ export default function CreateJobPage() {
     const values = form.getValues();
     return {
       organizationId: organization?.id ?? "",
+      organizationName: organization?.name ?? "",
+      organizationImageUrl: organization?.imageUrl ?? undefined,
       name: values.name,
       department: values.department,
       overview: values.overview,
@@ -261,6 +268,8 @@ export default function CreateJobPage() {
 
     const created = await createMutation.mutateAsync({
       organizationId: organization.id,
+      organizationName: organization.name ?? "",
+      organizationImageUrl: organization.imageUrl ?? undefined,
       ...values,
     });
     // Refresh jobs list and warm the cache for the new job
