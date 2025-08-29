@@ -1,20 +1,16 @@
-import Database from "better-sqlite3";
-import { drizzle } from "drizzle-orm/better-sqlite3";
+import { drizzle } from "drizzle-orm/libsql";
+import { createClient } from "@libsql/client";
 import * as schema from "./schema";
 
-let sqlite: Database.Database | null = null;
-
-export function getDatabaseFilePath() {
-  return process.env.DATABASE_PATH || ".data/app.db";
-}
-
-export function createSqlite(): Database.Database {
-  if (!sqlite) {
-    sqlite = new Database(getDatabaseFilePath());
+function getTursoConfig() {
+  const url = process.env.TURSO_DB_URL;
+  const authToken = process.env.TURSO_DB_AUTH_TOKEN;
+  if (!url) {
+    throw new Error("TURSO_DB_URL is not set");
   }
-  return sqlite;
+  return { url, authToken };
 }
 
-export const db = drizzle(createSqlite(), { schema });
-
+const client = createClient(getTursoConfig());
+export const db = drizzle(client, { schema });
 export type DB = typeof db;

@@ -2,10 +2,17 @@ import { initTRPC } from "@trpc/server";
 import { z } from "zod";
 import type { Context } from "./context";
 import { jobApplications, jobPosts } from "../db/schema";
+import { desc } from "drizzle-orm";
 
 const t = initTRPC.context<Context>().create();
 
 export const appRouter = t.router({
+  listJobPosts: t.procedure.query(async ({ ctx }) => {
+    const rows = await ctx.db.query.jobPosts.findMany({
+      orderBy: desc(jobPosts.createdAt),
+    });
+    return rows;
+  }),
   createJobPost: t.procedure
     .input(
       z.object({
