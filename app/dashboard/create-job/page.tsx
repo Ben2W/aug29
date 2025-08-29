@@ -6,7 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { useRouter } from "next/navigation";
 import { trpc } from "@/lib/trpc/client";
-import { JobPostPreview } from "@/components/job-post-preview";
+import { JobPost } from "@/components/job-post/JobPost";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -28,6 +28,7 @@ import {
 import type { NewJobPost } from "@/server/db/schema";
 import { useOrganization } from "@clerk/nextjs";
 import { DepartmentIcon } from "@/components/department-icon";
+import { Textarea } from "@/components/ui/textarea";
 
 const formSchema = z.object({
   department: z.enum(["engineering", "design", "data", "people", "growth"]),
@@ -150,7 +151,11 @@ function CreateJobForm({
             <FormItem>
               <FormLabel>Overview</FormLabel>
               <FormControl>
-                <Input placeholder="Describe the role..." {...field} />
+                <Textarea
+                  className="max-h-[200px] overflow-auto"
+                  placeholder="Describe the role..."
+                  {...field}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -178,15 +183,21 @@ function CreateJobPreview({
 }) {
   return (
     <div className="space-y-4">
-      <JobPostPreview post={{ id: 0, createdAt: "", ...previewData }} />
-      <div className="flex gap-2">
-        <Button variant="outline" onClick={onBack}>
-          Back
-        </Button>
-        <Button onClick={onCreate} disabled={isPending}>
-          {isPending ? "Creating..." : "Create"}
-        </Button>
+      <div className="flex items-center justify-between">
+        <h2 className="text-xl font-semibold">Preview</h2>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={onBack}>
+            Back
+          </Button>
+          <Button onClick={onCreate} disabled={isPending}>
+            {isPending ? "Creating..." : "Create"}
+          </Button>
+        </div>
       </div>
+      <JobPost
+        post={{ id: 0, createdAt: "", ...previewData }}
+        disableApplicationUpload
+      />
     </div>
   );
 }
@@ -208,6 +219,7 @@ export default function CreateJobPage() {
     },
   });
 
+  const utils = trpc.useUtils();
   const createMutation = trpc.createJobPost.useMutation();
 
   const previewData: NewJobPost = useMemo(() => {
@@ -234,19 +246,25 @@ export default function CreateJobPage() {
       organizationId: organization.id,
       ...values,
     });
+    // Refresh jobs list and warm the cache for the new job
+    await utils.listJobPosts.invalidate();
+    await utils.getJobPost.prefetch({ id: created.id });
     toast.success("Job created successfully");
     router.push(`/dashboard/job/${created.id}`);
   };
 
   return (
-    <div className="mx-auto max-w-2xl space-y-6 p-6">
-      <h1 className="text-2xl font-semibold">Create Job</h1>
+    <div className="p-6">
+      <h1 className="text-2xl font-semibold text-center">Create Job</h1>
+
       {step === "form" ? (
-        <CreateJobForm form={form} onNext={() => setStep("preview")} />
+        <div className="mx-auto max-w-2xl space-y-6 ">
+          <CreateJobForm form={form} onNext={() => setStep("preview")} />
+        </div>
       ) : (
         <CreateJobPreview
           previewData={previewData}
-          isPending={createMutation.isPending}
+          isPending={createMutation.isPending || createMutation.isSuccess}
           onBack={() => setStep("form")}
           onCreate={handleCreate}
         />

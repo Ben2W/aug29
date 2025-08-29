@@ -1,17 +1,33 @@
+"use client";
+import { use } from "react";
 import { notFound } from "next/navigation";
+import { trpc } from "@/lib/trpc/client";
+import { JobPost } from "@/components/job-post/JobPost";
 
 export default function JobDetailPage({
   params,
 }: {
-  params: { jobId: string };
+  params: Promise<{ jobId: string }>;
 }) {
-  const id = Number(params.jobId);
+  const { jobId } = use(params);
+  const id = Number(jobId);
   if (!Number.isFinite(id)) return notFound();
+
+  const { data, isLoading } = trpc.getJobPost.useQuery({ id });
+
+  if (isLoading) {
+    return (
+      <div className="p-6">
+        <h1 className="text-2xl font-semibold">Loading...</h1>
+      </div>
+    );
+  }
+
+  if (!data) return notFound();
 
   return (
     <div className="p-6">
-      <h1 className="text-2xl font-semibold">Job #{id}</h1>
-      <p className="text-muted-foreground">Details coming soon.</p>
+      <JobPost post={data} />
     </div>
   );
 }

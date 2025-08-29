@@ -2,7 +2,7 @@ import { initTRPC } from "@trpc/server";
 import { z } from "zod";
 import type { Context } from "./context";
 import { jobApplications, jobPosts } from "../db/schema";
-import { desc } from "drizzle-orm";
+import { desc, eq } from "drizzle-orm";
 
 const t = initTRPC.context<Context>().create();
 
@@ -13,6 +13,14 @@ export const appRouter = t.router({
     });
     return rows;
   }),
+  getJobPost: t.procedure
+    .input(z.object({ id: z.number().int().positive() }))
+    .query(async ({ ctx, input }) => {
+      const row = await ctx.db.query.jobPosts.findFirst({
+        where: eq(jobPosts.id, input.id),
+      });
+      return row;
+    }),
   createJobPost: t.procedure
     .input(
       z.object({
