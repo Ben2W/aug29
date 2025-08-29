@@ -25,6 +25,7 @@ export const appRouter = t.router({
     .input(
       z.object({
         organizationId: z.string().min(1),
+        name: z.string().min(1),
         department: z.enum([
           "engineering",
           "design",
@@ -43,6 +44,7 @@ export const appRouter = t.router({
         .insert(jobPosts)
         .values({
           organizationId: input.organizationId,
+          name: input.name,
           department: input.department,
           overview: input.overview,
           location: input.location,

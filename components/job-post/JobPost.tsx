@@ -46,9 +46,7 @@ export function JobPost({
   return (
     <div className="space-y-6">
       <div className="rounded-lg border p-4">
-        <div className="text-2xl font-semibold">
-          {post.department} — Software Engineer
-        </div>
+        <div className="text-2xl font-semibold">{post.name}</div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
           {details.map((d) => (
             <div key={d.label} className="text-sm">

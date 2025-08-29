@@ -31,6 +31,7 @@ import { DepartmentIcon } from "@/components/department-icon";
 import { Textarea } from "@/components/ui/textarea";
 
 const formSchema = z.object({
+  name: z.string().min(1, "Required"),
   department: z.enum(["engineering", "design", "data", "people", "growth"]),
   overview: z.string().min(1, "Required"),
   location: z.string().min(1, "Required"),
@@ -80,6 +81,20 @@ function CreateJobForm({
                   </SelectItem>
                 </SelectContent>
               </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="name"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Job Title</FormLabel>
+              <FormControl>
+                <Input placeholder="e.g. Senior Software Engineer" {...field} />
+              </FormControl>
               <FormMessage />
             </FormItem>
           )}
@@ -211,6 +226,7 @@ export default function CreateJobPage() {
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
+      name: "",
       department: "engineering",
       overview: "",
       location: "Remote",
@@ -226,6 +242,7 @@ export default function CreateJobPage() {
     const values = form.getValues();
     return {
       organizationId: organization?.id ?? "",
+      name: values.name,
       department: values.department,
       overview: values.overview,
       location: values.location,

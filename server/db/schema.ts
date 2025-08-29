@@ -4,6 +4,7 @@ import { integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
 export const jobPosts = sqliteTable("job_posts", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   organizationId: text("organization_id").notNull(),
+  name: text("name").notNull(),
   department: text("department").notNull(),
   overview: text("overview").notNull(),
   location: text("location").notNull(),

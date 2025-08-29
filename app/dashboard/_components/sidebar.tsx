@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { Plus, Wrench, Palette, Users, Rocket, Database } from "lucide-react";
 import {
   Sidebar as ShadcnSidebar,
@@ -36,17 +37,33 @@ export function AppSidebar() {
     engineering: true,
   });
 
+  const pathname = usePathname();
+
   const { data: posts, isLoading } = trpc.listJobPosts.useQuery();
 
-  const grouped = useMemo(() => {
-    const map: Record<string, { id: number; label: string }[]> = {};
+  // Group jobs by department, and also build a map of jobId to job for selection
+  const { grouped, jobIdToJob } = useMemo(() => {
+    const map: Record<string, { id: number; name: string }[]> = {};
+    const idMap: Record<
+      number,
+      { id: number; name: string; department: string }
+    > = {};
     for (const meta of departmentMeta) map[meta.key] = [];
     for (const p of posts ?? []) {
-      const label = `Job #${p.id} • ${p.location}`;
-      (map[p.department] ?? (map[p.department] = [])).push({ id: p.id, label });
+      map[p.department]?.push({ id: p.id, name: p.name });
+      idMap[p.id] = { id: p.id, name: p.name, department: p.department };
     }
-    return map;
+    return { grouped: map, jobIdToJob: idMap };
   }, [posts]);
+
+  // Extract selected jobId from pathname, e.g. /dashboard/job/123
+  let selectedJobId: number | null = null;
+  if (pathname) {
+    const match = pathname.match(/\/dashboard\/job\/(\d+)/);
+    if (match) {
+      selectedJobId = Number(match[1]);
+    }
+  }
 
   return (
     <ShadcnSidebar>
@@ -67,17 +84,32 @@ export function AppSidebar() {
             {departmentMeta.map((dept) => {
               const Icon = dept.icon ?? Wrench;
               const isOpen = !!open[dept.key];
+              const jobs = grouped[dept.key] ?? [];
+              const count = jobs.length;
+              const isDisabled = !isLoading && count === 0;
+
               return (
                 <div key={dept.key} className="mb-1">
                   <SidebarMenu>
                     <SidebarMenuItem>
                       <SidebarMenuButton
                         onClick={() =>
+                          !isDisabled &&
                           setOpen((p) => ({ ...p, [dept.key]: !isOpen }))
+                        }
+                        disabled={isDisabled}
+                        aria-disabled={isDisabled}
+                        className={
+                          isDisabled ? "opacity-50 cursor-not-allowed" : ""
                         }
                       >
                         <Icon />
-                        <span>{dept.name}</span>
+                        <span>
+                          {dept.name}
+                          <span className="ml-2 text-xs text-muted-foreground">
+                            ({count})
+                          </span>
+                        </span>
                       </SidebarMenuButton>
                       {isOpen && (
                         <SidebarMenuSub>
@@ -88,22 +120,27 @@ export function AppSidebar() {
                               </SidebarMenuSubButton>
                             </SidebarMenuSubItem>
                           )}
-                          {!isLoading && grouped[dept.key]?.length === 0 && (
-                            <SidebarMenuSubItem>
-                              <SidebarMenuSubButton>
-                                <span>No jobs</span>
-                              </SidebarMenuSubButton>
-                            </SidebarMenuSubItem>
-                          )}
-                          {grouped[dept.key]?.map((job) => (
-                            <SidebarMenuSubItem key={job.id}>
-                              <SidebarMenuSubButton asChild>
-                                <Link href={`/dashboard/job/${job.id}`}>
-                                  <span>{job.label}</span>
-                                </Link>
-                              </SidebarMenuSubButton>
-                            </SidebarMenuSubItem>
-                          ))}
+
+                          {jobs.map((job) => {
+                            const isSelected = selectedJobId === job.id;
+                            return (
+                              <SidebarMenuSubItem key={job.id}>
+                                <SidebarMenuSubButton
+                                  asChild
+                                  className={
+                                    isSelected
+                                      ? "bg-muted font-semibold text-primary"
+                                      : ""
+                                  }
+                                  aria-current={isSelected ? "page" : undefined}
+                                >
+                                  <Link href={`/dashboard/job/${job.id}`}>
+                                    <span>{job.name}</span>
+                                  </Link>
+                                </SidebarMenuSubButton>
+                              </SidebarMenuSubItem>
+                            );
+                          })}
                         </SidebarMenuSub>
                       )}
                     </SidebarMenuItem>
