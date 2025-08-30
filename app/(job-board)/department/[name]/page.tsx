@@ -1,6 +1,5 @@
 "use client";
 
-import { useMemo } from "react";
 import { useParams } from "next/navigation";
 import { trpc } from "@/lib/trpc/client";
 import JobPostPreview from "@/components/job-post-preview";

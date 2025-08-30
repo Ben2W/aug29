@@ -2,7 +2,7 @@ import { initTRPC } from "@trpc/server";
 import { z } from "zod";
 import type { Context } from "./context";
 import { jobApplications, jobPosts } from "../db/schema";
-import { desc, eq } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 
 const t = initTRPC.context<Context>().create();
 
@@ -93,6 +93,23 @@ export const appRouter = t.router({
         })
         .returning();
       return inserted;
+    }),
+  listJobApplications: t.procedure
+    .input(
+      z.object({
+        jobPostId: z.number().int().positive(),
+        status: z.enum(["pending", "accepted", "rejected"]).default("pending"),
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      const rows = await ctx.db.query.jobApplications.findMany({
+        where: and(
+          eq(jobApplications.jobPostId, input.jobPostId),
+          eq(jobApplications.status, input.status)
+        ),
+        orderBy: desc(jobApplications.createdAt),
+      });
+      return rows;
     }),
 });
 

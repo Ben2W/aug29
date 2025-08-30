@@ -3,6 +3,8 @@ import { use } from "react";
 import { notFound } from "next/navigation";
 import { trpc } from "@/lib/trpc/client";
 import { JobPost } from "@/components/job-post/JobPost";
+import JobApplications from "@/components/job-applications";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function JobDetailPage({
   params,
@@ -27,7 +29,20 @@ export default function JobDetailPage({
 
   return (
     <div className="p-6">
-      <JobPost post={data} />
+      <Tabs defaultValue="applications" className="w-full">
+        <TabsList>
+          <TabsTrigger value="applications">Applications</TabsTrigger>
+          <TabsTrigger value="preview">Preview</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="applications" className="mt-4">
+          <JobApplications jobPostId={data.id} />
+        </TabsContent>
+
+        <TabsContent value="preview" className="mt-4">
+          <JobPost post={data} disableApplicationUpload />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

@@ -23,6 +23,10 @@ export const jobApplications = sqliteTable("job_applications", {
   name: text("name").notNull(),
   email: text("email").notNull(),
   linkedinUrl: text("linkedin_url").notNull(),
+  status: text("status", { enum: ["pending", "accepted", "rejected"] })
+    .notNull()
+    .default("pending"),
+  statusUpdatedAt: text("status_updated_at"),
   createdAt: text("created_at")
     .default(sql`CURRENT_TIMESTAMP`)
     .notNull(),

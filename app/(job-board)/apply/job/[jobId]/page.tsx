@@ -25,7 +25,7 @@ export default function ApplyJobPage() {
         <h1 className="text-2xl font-semibold">Apply to job</h1>
         <Button asChild variant="outline" size="sm">
           <Link href={`/department/${post?.department ?? "engineering"}`}>
-            Back to department
+            Back to jobs
           </Link>
         </Button>
       </div>
