@@ -20,9 +20,7 @@ export function JobPostPreview({ post }: { post: JobPost }) {
         <CardHeader className="flex flex-row items-start justify-between">
           <div>
             <CardTitle className="text-xl">{post.name}</CardTitle>
-            <CardDescription className="mt-1">
-              Org: {post.organizationId}
-            </CardDescription>
+            <CardDescription className="mt-1">{post.location}</CardDescription>
           </div>
           <div className="text-muted-foreground">
             <DepartmentIcon value={department} className="size-6" />

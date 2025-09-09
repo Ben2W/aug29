@@ -49,7 +49,7 @@ export default function DepartmentPage() {
       </div>
 
       <div className="mt-6 text-muted-foreground">
-        Browse all open roles in this department across organizations.
+        Browse all open roles in this department.
       </div>
 
       <div className="mt-8 max-h-[70vh] overflow-auto pr-1 space-y-4">

@@ -25,8 +25,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import type { NewJobPost } from "@/server/db/schema";
-import { useOrganization } from "@clerk/nextjs";
+// Removed organization usage
 import { DepartmentIcon } from "@/components/department-icon";
 import { Textarea } from "@/components/ui/textarea";
 
@@ -185,13 +184,22 @@ function CreateJobForm({
   );
 }
 
+type CreateJobPreviewData = {
+  name: string;
+  department: "engineering" | "design" | "data" | "people" | "growth";
+  overview: string;
+  location: string;
+  employmentType: "full-time" | "part-time";
+  locationType: "remote" | "onsite" | "hybrid";
+};
+
 function CreateJobPreview({
   previewData,
   isPending,
   onBack,
   onCreate,
 }: {
-  previewData: NewJobPost;
+  previewData: CreateJobPreviewData;
   isPending: boolean;
   onBack: () => void;
   onCreate: () => void;
@@ -213,6 +221,7 @@ function CreateJobPreview({
         post={{
           id: 0,
           createdAt: "",
+          ownerUserId: "",
           ...previewData,
         }}
         disableApplicationUpload
@@ -223,7 +232,7 @@ function CreateJobPreview({
 
 export default function CreateJobPage() {
   const router = useRouter();
-  const { organization } = useOrganization();
+  // No organization context
 
   const [step, setStep] = useState<"form" | "preview">("form");
 
@@ -242,12 +251,9 @@ export default function CreateJobPage() {
   const utils = trpc.useUtils();
   const createMutation = trpc.createJobPost.useMutation();
 
-  const previewData: NewJobPost = useMemo(() => {
+  const previewData: CreateJobPreviewData = useMemo(() => {
     const values = form.getValues();
     return {
-      organizationId: organization?.id ?? "",
-      organizationName: organization?.name ?? "",
-      organizationImageUrl: organization?.imageUrl ?? undefined,
       name: values.name,
       department: values.department,
       overview: values.overview,
@@ -260,17 +266,9 @@ export default function CreateJobPage() {
   const handleCreate = async () => {
     const values = form.getValues();
 
-    if (!organization) {
-      toast.error("No organization found");
-      return;
-    }
-
-    const created = await createMutation.mutateAsync({
-      organizationId: organization.id,
-      ...values,
-    });
+    const created = await createMutation.mutateAsync(values);
     // Refresh jobs list and warm the cache for the new job
-    await utils.listJobPosts.invalidate();
+    await utils.listMyJobPosts.invalidate();
     await utils.getJobPost.prefetch({ id: created.id });
     toast.success("Job created successfully");
     router.push(`/dashboard/job/${created.id}`);

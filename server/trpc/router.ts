@@ -1,10 +1,19 @@
-import { initTRPC } from "@trpc/server";
+import { initTRPC, TRPCError } from "@trpc/server";
 import { z } from "zod";
-import type { Context } from "./context";
+import { buildContext, type Context } from "./context";
 import { jobApplications, jobPosts } from "../db/schema";
 import { and, desc, eq } from "drizzle-orm";
 
 const t = initTRPC.context<Context>().create();
+
+const isAuthed = t.middleware(({ ctx, next }) => {
+  if (!ctx.userId) {
+    throw new TRPCError({ code: "UNAUTHORIZED" });
+  }
+  return next();
+});
+
+const protectedProcedure = t.procedure.use(isAuthed);
 
 export const appRouter = t.router({
   listJobPosts: t.procedure.query(async ({ ctx }) => {
@@ -40,10 +49,9 @@ export const appRouter = t.router({
       });
       return row;
     }),
-  createJobPost: t.procedure
+  createJobPost: protectedProcedure
     .input(
       z.object({
-        organizationId: z.string().min(1),
         name: z.string().min(1),
         department: z.enum([
           "engineering",
@@ -62,7 +70,7 @@ export const appRouter = t.router({
       const [inserted] = await ctx.db
         .insert(jobPosts)
         .values({
-          organizationId: input.organizationId,
+          ownerUserId: ctx.userId!,
           name: input.name,
           department: input.department,
           overview: input.overview,
@@ -73,7 +81,14 @@ export const appRouter = t.router({
         .returning();
       return inserted;
     }),
-  createJobApplication: t.procedure
+  listMyJobPosts: protectedProcedure.query(async ({ ctx }) => {
+    const rows = await ctx.db.query.jobPosts.findMany({
+      where: eq(jobPosts.ownerUserId, ctx.userId!),
+      orderBy: desc(jobPosts.createdAt),
+    });
+    return rows;
+  }),
+  createJobApplication: protectedProcedure
     .input(
       z.object({
         jobPostId: z.number().int().positive(),
@@ -114,3 +129,13 @@ export const appRouter = t.router({
 });
 
 export type AppRouter = typeof appRouter;
+
+// Helper to build a server-side caller with injected context
+export function createServerCaller(ctx: {
+  db?: Context["db"];
+  userId?: string | null;
+}) {
+  return appRouter.createCaller(
+    buildContext({ db: ctx.db, userId: ctx.userId ?? null })
+  );
+}

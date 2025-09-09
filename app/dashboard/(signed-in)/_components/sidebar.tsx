@@ -39,7 +39,7 @@ export function AppSidebar() {
 
   const pathname = usePathname();
 
-  const { data: posts, isLoading } = trpc.listJobPosts.useQuery();
+  const { data: posts, isLoading } = trpc.listMyJobPosts.useQuery();
 
   // Group jobs by department, and also build a map of jobId to job for selection
   const { grouped, jobIdToJob } = useMemo(() => {
